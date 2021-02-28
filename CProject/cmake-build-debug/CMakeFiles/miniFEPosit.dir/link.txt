@@ -1,1 +1,0 @@
-/usr/bin/c++  -g   CMakeFiles/miniFEPosit.dir/main.cpp.o  -o miniFEPosit 
