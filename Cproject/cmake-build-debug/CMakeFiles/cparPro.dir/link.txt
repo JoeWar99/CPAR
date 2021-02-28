@@ -1,0 +1,1 @@
+/usr/bin/c++  -g   CMakeFiles/cparPro.dir/main.cpp.o  -o cparPro 
