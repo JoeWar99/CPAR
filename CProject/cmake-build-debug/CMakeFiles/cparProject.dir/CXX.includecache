@@ -1,0 +1,22 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/jose/Desktop/cparProject/main.cpp
+cstdio
+-
+iostream
+-
+iomanip
+-
+ctime
+-
+cstdlib
+-
+papi.h
+-
+
