@@ -32,6 +32,7 @@ public class MyMainClass {
         int temp;
 
         Arrays.fill(pha, 1.0);
+        Arrays.fill(phc, 0.0);
 
         // Get current time
         long start = System.currentTimeMillis();

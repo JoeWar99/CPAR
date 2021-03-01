@@ -10,24 +10,20 @@ using namespace std;
 
 #define SYSTEMTIME clock_t
 
-void initializeArrays(double *pha, double *phb, double *phc){
-
-}
-
-void printResultAndTime(SYSTEMTIME Time1, int m_br, double *phc, char *st){
+void printResultAndTime(SYSTEMTIME Time1, int size, double *phc, char *st){
     SYSTEMTIME Time2 = clock();
     sprintf(st, "Time: %3.3f seconds\n", (double)(Time2 - Time1) / CLOCKS_PER_SEC);
     cout << st;
 
     cout << "Result matrix: " << endl;
     for(int i=0; i<1; i++)
-    {	for(int j=0; j<min(10,m_br); j++)
+    {	for(int j=0; j<min(10,size); j++)
             cout << phc[j] << " ";
     }
     cout << endl;
 }
 
-void OnMult(int m_ar, int m_br)
+void OnMult(int size)
 {
     SYSTEMTIME Time1;
 
@@ -37,32 +33,32 @@ void OnMult(int m_ar, int m_br)
 
     double *pha, *phb, *phc;
 
-    pha = (double *)malloc((m_ar * m_ar) * sizeof(double));
-    phb = (double *)malloc((m_ar * m_ar) * sizeof(double));
-    phc = (double *)malloc((m_ar * m_ar) * sizeof(double));
+    pha = (double *)malloc((size * size) * sizeof(double));
+    phb = (double *)malloc((size * size) * sizeof(double));
+    phc = (double *)malloc((size * size) * sizeof(double));
 
-    for(i=0; i<m_ar; i++)
-        for(j=0; j<m_ar; j++)
-            pha[i*m_ar + j] = (double)1.0;
+    for(i=0; i<size; i++)
+        for(j=0; j<size; j++)
+            pha[i*size + j] = (double)1.0;
 
-    for(i=0; i<m_br; i++)
-        for(j=0; j<m_br; j++)
-            phb[i*m_br + j] = (double)(i+1);
+    for(i=0; i<size; i++)
+        for(j=0; j<size; j++)
+            phb[i*size + j] = (double)(i+1);
 
     Time1 = clock();
 
-    for(i=0; i<m_ar; i++)
-    {	for( j=0; j<m_br; j++)
+    for(i=0; i<size; i++)
+    {	for( j=0; j<size; j++)
         {	temp = 0;
-            for( k=0; k<m_ar; k++)
+            for( k=0; k<size; k++)
             {
-                temp += pha[i*m_ar+k] * phb[k*m_br+j];
+                temp += pha[i*size+k] * phb[k*size+j];
             }
-            phc[i*m_ar+j]=temp;
+            phc[i*size+j]=temp;
         }
     }
 
-    printResultAndTime(Time1, m_br, phc, st);
+    printResultAndTime(Time1, size, phc, st);
 
     free(pha);
     free(phb);
@@ -70,7 +66,7 @@ void OnMult(int m_ar, int m_br)
 }
 
 
-void OnMultLine(int m_ar, int m_br)
+void OnMultLine(int size)
 {
     SYSTEMTIME Time1, Time2;
 
@@ -80,29 +76,33 @@ void OnMultLine(int m_ar, int m_br)
 
     double *pha, *phb, *phc;
 
-    pha = (double *)malloc((m_ar * m_ar) * sizeof(double));
-    phb = (double *)malloc((m_ar * m_ar) * sizeof(double));
-    phc = (double *)malloc((m_ar * m_ar) * sizeof(double));
+    pha = (double *)malloc((size * size) * sizeof(double));
+    phb = (double *)malloc((size * size) * sizeof(double));
+    phc = (double *)malloc((size * size) * sizeof(double));
 
-    for(i=0; i<m_ar; i++)
-        for(j=0; j<m_ar; j++)
-            pha[i*m_ar + j] = (double)1.0;
+    for(i=0; i<size; i++)
+        for(j=0; j<size; j++)
+            pha[i*size + j] = (double)1.0;
 
-    for(i=0; i<m_br; i++)
-        for(j=0; j<m_br; j++)
-            phb[i*m_br + j] = (double)(i+1);
+    for(i=0; i<size; i++)
+        for(j=0; j<size; j++)
+            phb[i*size + j] = (double)(i+1);
+
+    for(i=0; i<size; i++)
+        for(j=0; j<size; j++)
+            phc[i*size + j] = 0;
 
     Time1 = clock();
 
-    for(i=0; i<m_ar; i++)
-    {	for( k=0; k<m_ar; k++) {
-            for (j = 0; j < m_br; j++) {
-                phc[i * m_ar + j] += pha[i * m_ar + k] * phb[k * m_br + j];
+    for(i=0; i<size; i++)
+    {	for( k=0; k<size; k++) {
+            for (j = 0; j < size; j++) {
+                phc[i * size + j] += pha[i * size + k] * phb[k * size + j];
             }
         }
     }
 
-    printResultAndTime(Time1, m_br, phc, st);
+    printResultAndTime(Time1, size, phc, st);
 
     free(pha);
     free(phb);
@@ -144,7 +144,7 @@ void init_papi() {
 int main (int argc, char *argv[])
 {
     char c;
-    int lin, col, nt=1;
+    int size, nt=1;
     int op;
 
     int EventSet = PAPI_NULL;
@@ -176,10 +176,8 @@ int main (int argc, char *argv[])
         cin >>op;
         if (op == 0)
             break;
-        printf("Dimensions: lins cols ? ");
-        cin >> lin >> col;
-
-
+        printf("Matrix Size ? ");
+        cin >> size;
 
         // Start counting
         ret = PAPI_start(EventSet);
@@ -187,10 +185,10 @@ int main (int argc, char *argv[])
 
         switch (op){
             case 1:
-                OnMult(lin, col);
+                OnMult(size);
                 break;
             case 2:
-                OnMultLine(lin, col);
+                OnMultLine(size);
                 break;
         }
 
