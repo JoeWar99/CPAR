@@ -10,14 +10,18 @@ using namespace std;
 
 #define SYSTEMTIME clock_t
 
-void printResultAndTime(SYSTEMTIME Time1, int m_br, double *phc){
-    Time2 = clock();
+void initializeArrays(double *pha, double *phb, double *phc){
+
+}
+
+void printResultAndTime(SYSTEMTIME Time1, int m_br, double *phc, char *st){
+    SYSTEMTIME Time2 = clock();
     sprintf(st, "Time: %3.3f seconds\n", (double)(Time2 - Time1) / CLOCKS_PER_SEC);
     cout << st;
 
     cout << "Result matrix: " << endl;
-    for(i=0; i<1; i++)
-    {	for(j=0; j<min(10,m_br); j++)
+    for(int i=0; i<1; i++)
+    {	for(int j=0; j<min(10,m_br); j++)
             cout << phc[j] << " ";
     }
     cout << endl;
@@ -25,7 +29,7 @@ void printResultAndTime(SYSTEMTIME Time1, int m_br, double *phc){
 
 void OnMult(int m_ar, int m_br)
 {
-    SYSTEMTIME Time1, Time2;
+    SYSTEMTIME Time1;
 
     char st[100];
     double temp;
@@ -58,7 +62,7 @@ void OnMult(int m_ar, int m_br)
         }
     }
 
-    printResultAndTime(Time1, m_br, phc);
+    printResultAndTime(Time1, m_br, phc, st);
 
     free(pha);
     free(phb);
@@ -98,7 +102,7 @@ void OnMultLine(int m_ar, int m_br)
         }
     }
 
-    printResultAndTime(Time1, m_br, phc);
+    printResultAndTime(Time1, m_br, phc, st);
 
     free(pha);
     free(phb);
