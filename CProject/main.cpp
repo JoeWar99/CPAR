@@ -17,7 +17,7 @@ void printResultAndTime(SYSTEMTIME Time1, int size, double *phc, char *st){
 
     cout << "Result matrix: " << endl;
     for(int i=0; i<1; i++)
-    {	for(int j=0; j<min(10,size); j++)
+    {	for(int j=0; j<min(10,size * size); j++)
             cout << phc[j] << " ";
     }
     cout << endl;
@@ -90,7 +90,7 @@ void OnMultLine(int size)
     Time1 = clock();
 
     for(i=0; i<size; i++)
-    {	for( k=0; k<size; k++) {
+    {	for(k=0; k<size; k++) {
             for (j = 0; j < size; j++) {
                 phc[i * size + j] += pha[i * size + k] * phb[k * size + j];
             }
@@ -110,7 +110,7 @@ void OnMultBlock(int size, int blockSize)
 
     char st[100];
     double temp;
-    int i0, i, j0, j, k0, k, blocks = size / blockSize;
+    int i0, i, j0, j, k0, k;
 
     double* pha, * phb, * phc;
 
@@ -122,17 +122,17 @@ void OnMultBlock(int size, int blockSize)
         for (j = 0; j < size; j++) {
             pha[i * size + j] = (double)1.0;
             phb[i * size + j] = (double)(i + 1);
-            phb[i * size + j] = 0;
+            phc[i * size + j] = 0;
         }
     }
 
     for (i0 = 0; i0 < size; i0 += blockSize) {
-        for (j0 = 0; j0 < size; j0 += blockSize) {
-            for (k0 = 0; k0 < size; k0 += blockSize) {
-                for (i = 0; i < min(i0 + blockSize - 1, size); i++) {
-                    for (j = 0; j < min(j0 + blockSize - 1, size); j++) {
-                        for (k = 0; k < min(k0 + blockSize - 1, size); k++) {
-                            phc[i * size + j] += pha[i * size + k] * phb[k * size + j];
+        for (k0 = 0; k0 < size; k0 += blockSize) {
+            for (j0 = 0; j0 < size; j0 += blockSize) {
+                for (i = i0; i < min(i0 + blockSize, size); i++) {
+                    for (k = k0; k < min(k0 + blockSize, size); k++) {
+                        for (j = j0; j < min(j0 + blockSize, size); j++) {
+                                phc[i * size + j] += pha[i * size + k] * phb[k * size + j];
                         }
                     }
                 }
@@ -183,7 +183,7 @@ int main (int argc, char *argv[])
 {
     char c;
     int size, nt=1;
-    int op;
+    int op, blockSize;
 
     int EventSet = PAPI_NULL;
     long long values[2];
@@ -210,6 +210,7 @@ int main (int argc, char *argv[])
     do {
         cout << endl << "1. Multiplication" << endl;
         cout << "2. Line Multiplication" << endl;
+        cout << "3. Block Multiplication" << endl;
         cout << "Selection?: ";
         cin >>op;
         if (op == 0)
@@ -227,6 +228,11 @@ int main (int argc, char *argv[])
                 break;
             case 2:
                 OnMultLine(size);
+                break;
+            case 3:
+                cout << "Block Size?" << endl;
+                cin >> blockSize;
+                OnMultBlock(size, blockSize);
                 break;
         }
 
