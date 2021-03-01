@@ -37,13 +37,12 @@ void OnMult(int size)
     phb = (double *)malloc((size * size) * sizeof(double));
     phc = (double *)malloc((size * size) * sizeof(double));
 
-    for(i=0; i<size; i++)
-        for(j=0; j<size; j++)
-            pha[i*size + j] = (double)1.0;
-
-    for(i=0; i<size; i++)
-        for(j=0; j<size; j++)
-            phb[i*size + j] = (double)(i+1);
+    for (i = 0; i < size; i++) {
+        for (j = 0; j < size; j++) {
+            pha[i * size + j] = (double)1.0;
+            phb[i * size + j] = (double)(i + 1);
+        }
+    }
 
     Time1 = clock();
 
@@ -80,17 +79,13 @@ void OnMultLine(int size)
     phb = (double *)malloc((size * size) * sizeof(double));
     phc = (double *)malloc((size * size) * sizeof(double));
 
-    for(i=0; i<size; i++)
-        for(j=0; j<size; j++)
+    for (i = 0; i < size; i++) {
+        for (j = 0; j < size; j++) {
             pha[i*size + j] = (double)1.0;
-
-    for(i=0; i<size; i++)
-        for(j=0; j<size; j++)
             phb[i*size + j] = (double)(i+1);
-
-    for(i=0; i<size; i++)
-        for(j=0; j<size; j++)
             phc[i*size + j] = 0;
+        }
+    }
 
     Time1 = clock();
 
@@ -98,6 +93,49 @@ void OnMultLine(int size)
     {	for( k=0; k<size; k++) {
             for (j = 0; j < size; j++) {
                 phc[i * size + j] += pha[i * size + k] * phb[k * size + j];
+            }
+        }
+    }
+
+    printResultAndTime(Time1, size, phc, st);
+
+    free(pha);
+    free(phb);
+    free(phc);
+}
+
+void OnMultBlock(int size, int blockSize)
+{
+    SYSTEMTIME Time1, Time2;
+
+    char st[100];
+    double temp;
+    int i0, i, j0, j, k0, k, blocks = size / blockSize;
+
+    double* pha, * phb, * phc;
+
+    pha = (double*)malloc((size * size) * sizeof(double));
+    phb = (double*)malloc((size * size) * sizeof(double));
+    phc = (double*)malloc((size * size) * sizeof(double));
+
+    for (i = 0; i < size; i++) {
+        for (j = 0; j < size; j++) {
+            pha[i * size + j] = (double)1.0;
+            phb[i * size + j] = (double)(i + 1);
+            phb[i * size + j] = 0;
+        }
+    }
+
+    for (i0 = 0; i0 < size; i0 += blockSize) {
+        for (j0 = 0; j0 < size; j0 += blockSize) {
+            for (k0 = 0; k0 < size; k0 += blockSize) {
+                for (i = 0; i < min(i0 + blockSize - 1, size); i++) {
+                    for (j = 0; j < min(j0 + blockSize - 1, size); j++) {
+                        for (k = 0; k < min(k0 + blockSize - 1, size); k++) {
+                            phc[i * size + j] += pha[i * size + k] * phb[k * size + j];
+                        }
+                    }
+                }
             }
         }
     }
