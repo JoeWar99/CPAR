@@ -4,10 +4,10 @@ import java.util.Scanner;
 
 public class MyMainClass {
 
-    public void printResultAndTime(long start, int m_br, double[] phc){
+    public void printResultAndTime(long start, int size, double[] phc){
         System.out.println("Result matrix: ");
         for(int i=0; i<1; i++)
-        {	for(int j=0; j<Math.min(10,m_br); j++)
+        {	for(int j=0; j<Math.min(10,size); j++)
             System.out.print(phc[j] + " ");
         }
         System.out.println("");
@@ -25,65 +25,66 @@ public class MyMainClass {
     }
 
 
-    public void onMult(int m_ar, int m_br){
-        double[] pha = new double[m_ar * m_ar];
-        double[] phb = new double[m_ar * m_ar];
-        double[] phc = new double[m_ar * m_ar];
+    public void onMult(int size){
+        double[] pha = new double[size * size];
+        double[] phb = new double[size * size];
+        double[] phc = new double[size * size];
         int temp;
-
+        
         Arrays.fill(pha, 1.0);
         Arrays.fill(phc, 0.0);
 
         // Get current time
         long start = System.currentTimeMillis();
 
-        for(int i=0; i<m_br; i++)
-            for(int j=0; j<m_br; j++)
-                phb[i*m_br + j] = i+1;
+        for(int i=0; i<size; i++)
+            for(int j=0; j<size; j++)
+                phb[i*size + j] = i+1;
 
-        for(int i=0; i<m_ar; i++)
-        {	for(int j=0; j<m_br; j++) {
+        for(int i=0; i<size; i++)
+        {	for(int j=0; j<size; j++) {
                 temp = 0;
-                for(int k=0; k<m_ar; k++) {
-                    temp += pha[i*m_ar+k] * phb[k*m_br+j];
+                for(int k=0; k<size; k++) {
+                    temp += pha[i*size+k] * phb[k*size+j];
                 }
-                phc[i*m_ar+j]=temp;
+                phc[i*size+j]=temp;
             }
         }
 
-        printResultAndTime(start, m_br, phc);
+        printResultAndTime(start, size, phc);
     }
 
-    public void onMultLine(int m_ar, int m_br){
-        double[] pha = new double[m_ar * m_ar];
-        double[] phb = new double[m_ar * m_ar];
-        double[] phc = new double[m_ar * m_ar];
+    public void onMultLine(int size){
+        double[] pha = new double[size * size];
+        double[] phb = new double[size * size];
+        double[] phc = new double[size * size];
         int temp;
-
+        
         Arrays.fill(pha, 1.0);
+        Arrays.fill(phc, 0.0);
 
         // Get current time
         long start = System.currentTimeMillis();
 
-        for(int i=0; i<m_br; i++)
-            for(int j=0; j<m_br; j++)
-                phb[i*m_br + j] = i+1;
+        for(int i=0; i<size; i++)
+            for(int j=0; j<size; j++)
+                phb[i*size + j] = i+1;
 
-        for(int i=0; i<m_ar; i++)
-        {	for(int k=0; k<m_ar; k++) {
-                for (int j = 0; j < m_br; j++) {
-                    phc[i * m_ar + j] += pha[i * m_ar + k] * phb[k * m_br + j];
+        for(int i=0; i<size; i++)
+        {	for(int k=0; k<size; k++) {
+                for (int j = 0; j < size; j++) {
+                    phc[i * size + j] += pha[i * size + k] * phb[k * size + j];
                 }
             }
         }
 
-        printResultAndTime(start, m_br, phc);
+        printResultAndTime(start, size, phc);
     }
 
     public static void main(String[] args) {
         MyMainClass mainClass = new MyMainClass();
         Scanner scan = new Scanner(System.in);
-        int op, lin, col;
+        int op, size;
 
         op = 1;
         do {
@@ -96,17 +97,16 @@ public class MyMainClass {
             if (op == 0)
                 break;
 
-            System.out.println("Dimensions: lins cols ? ");
+            System.out.println("Matrix Size ?");
 
-            lin = scan.nextInt();
-            col = scan.nextInt();
+            size = scan.nextInt();
 
             switch (op){
                 case 1:
-                    mainClass.onMult(lin, col);
+                    mainClass.onMult(size);
                     break;
                 case 2:
-                    mainClass.onMultLine(lin, col);
+                    mainClass.onMultLine(size);
                     break;
             }
         }while (op != 0);
