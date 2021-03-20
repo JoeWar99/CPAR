@@ -67,7 +67,7 @@ void OnMult(int size)
 
 void OnMultLine(int size)
 {
-    SYSTEMTIME Time1, Time2;
+    SYSTEMTIME Time1;
 
     char st[100];
     double temp;
@@ -106,7 +106,7 @@ void OnMultLine(int size)
 
 void OnMultBlock(int size, int blockSize)
 {
-    SYSTEMTIME Time1, Time2;
+    SYSTEMTIME Time1;
 
     char st[100];
     double temp;
@@ -125,6 +125,8 @@ void OnMultBlock(int size, int blockSize)
             phc[i * size + j] = 0;
         }
     }
+
+    Time1 = clock();
 
     for (i0 = 0; i0 < size; i0 += blockSize) {
         for (k0 = 0; k0 < size; k0 += blockSize) {
