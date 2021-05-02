@@ -4,12 +4,14 @@ using namespace std;
 
 void luFactorization(float** a, int numberOfEquations){
     
+    // i = k
     for(int i = 0; i < numberOfEquations; i++){
-        for(int j = 0; j < numberOfEquations; j++){
-            
+        for(int j = i + 1; j < numberOfEquations; j++){
+           a[i][j] /= a[i][i];
+           a[j][j] -= a[i][j] * a[j][i];
         }
     }
-
+    
 }
 
 
