@@ -76,11 +76,16 @@ void luBlockFactorizationParallelOpenMP(float* a, int n, int init, int blockSize
         return;
     }
 
-    //3. Compute u01, a01 = l00 * u01;
-    luFactorizationUpperBlockOpenMP(a, n, init, blockSize);
+    #pragma omp parallel sections
+    {
+        #pragma omp section
+        //3. Compute u01, a01 = l00 * u01;
+        luFactorizationUpperBlockOpenMP(a, n, init, blockSize);
 
-    //4. Compute l10, a10 = l10 * u00;
-    luFactorizationLowerBlockOpenMP(a, n, init, blockSize);
+        #pragma omp section
+        //4. Compute l10, a10 = l10 * u00;
+        luFactorizationLowerBlockOpenMP(a, n, init, blockSize);
+    }
 
     //5. Update a11 to get a11' => l11 * u11 = a11 - l10 * u01 = a11';
     updateAMatrixOpenMP(a, n, init, blockSize);
