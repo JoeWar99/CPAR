@@ -163,6 +163,7 @@ int main(int argc, char **argv){
     float *a;
     char st[100];
     int op, size, blockSize;
+    srand (time(NULL));
 
     do {
         cout << endl << "1. LU sequential" << endl;
@@ -179,13 +180,24 @@ int main(int argc, char **argv){
 
         a = (float *) malloc(size * size * sizeof(float));
 
-        for (int i = 0; i < size * size; i++) {
-            a[i] = i;
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                a[i * size + j] = rand() % 100;
+            }
         }
 
+    
         cout << "A " << endl;
         printMatrix(size, size, a);
         cout << endl;
+
+        float *b = (float *) malloc(size * size * sizeof(float));
+
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                b[i * size + j] = a[i * size + j];
+            }
+        }
 
         if (op != 1)
         {
@@ -215,6 +227,13 @@ int main(int argc, char **argv){
     
         cout << endl << "LU" << endl;
         printMatrix(size, size, a);
+        cout << endl;
+
+
+        luFactorization(b, size);
+
+        cout << endl << "LU" << endl;
+        printMatrix(size, size, b);
         cout << endl;
 
         SYSTEMTIME Time2 = clock();
