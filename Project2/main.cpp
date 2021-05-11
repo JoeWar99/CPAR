@@ -5,6 +5,15 @@
 #include "luSYCL.cpp"
 #include <cstdlib>
 
+#ifdef _OPENMP
+  #include <omp.h>
+  #define TRUE  1
+  #define FALSE 0
+#else
+  #define omp_get_thread_num() 0
+  #define omp_get_num_threads() 1
+  #define omp_get_nested() 0
+#endif
 
 using namespace std;
 
@@ -160,10 +169,24 @@ void solveLULinearSystem(int Nx, int Ny, float *a, float *c){
 }
 
 int main(int argc, char **argv){
+
+    
+    #ifdef _OPENMP
+        (void) omp_set_dynamic(FALSE);
+        if (omp_get_dynamic()) {printf("Warning: dynamic adjustment of threads has been set\n");}
+        (void) omp_set_num_threads(3);
+
+        (void) omp_set_nested(TRUE);
+        if (! omp_get_nested()) {printf("Warning: nested parallelism not set\n");}
+    #endif
+
+   printf("Nested parallelism is %s\n", 
+           omp_get_nested() ? "supported" : "not supported");
     float *a, *b;
     char st[100];
-    int op, size, blockSize;
+    int op, size, blockSize, numProcessors;
     srand (time(NULL));
+
 
     do {
         cout << endl << "1. LU sequential" << endl;
@@ -199,6 +222,10 @@ int main(int argc, char **argv){
         {
             cout << endl << "Block Size?" << endl;
             cin >> blockSize;
+            cout << endl << "Num of processing units? Max: " << omp_get_num_procs() << endl;
+            cin >> numProcessors;
+            numProcessors = min(numProcessors, omp_get_num_procs());
+            omp_set_num_threads(numProcessors);
         }
         
         SYSTEMTIME Time1 = clock(); 
