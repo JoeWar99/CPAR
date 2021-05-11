@@ -1,13 +1,20 @@
 #include <iostream>
 #include <chrono>
+#include <ctime>
+#include "luOpenMP.cpp"
+#include "luSYCL.cpp"
+#include <cstdlib>
+
 
 using namespace std;
 
+#define SYSTEMTIME clock_t
+
 void printMatrix(int Nx, int Ny, float *a){
     cout << "Matrix: " << endl;
-    for (int i = 0; i < Nx; i++)
+    for (int i = 0; i < min(Nx, 10); i++)
     {
-        for (int j = 0; j < Ny; j++)
+        for (int j = 0; j < min(Ny, 10); j++)
         {
             cout << a[i * Ny + j] << "   ";
         }
@@ -15,6 +22,14 @@ void printMatrix(int Nx, int Ny, float *a){
     }
     cout << endl;
     return;
+}
+
+void printMatrixReduced(float *a, int size){
+    for(int i=0; i<1; i++)
+    {	for(int j=0; j<min(10,size * size); j++)
+            cout << a[j] << " ";
+    }
+    cout << endl;
 }
 
 void luFactorization(float* a, int numberOfEquations){
@@ -29,24 +44,6 @@ void luFactorization(float* a, int numberOfEquations){
             }
         }
     }
-}
-
-void luBlockFactorizationParallel(float* a, int numberOfEquations, int b){
-    
-    //2. Compute l00 & u00, a00 = l00 * u00;  Sequential 
-
-
-    // Next two steps must be done in paralel
-
-    //3. Compute u01, a01 = l00 * u01; paralel
-
-    //4. Compute l10, a10 = l10 * u00; paralel
-
-
-    //5. Update a11 to get a11' => l11 * u11 = a11 - l10 * u01 = a11'; the multiplication of l10 * u01 can be done in paralel and with blocks
-
-
-    //6. Recursively solve a11' = l11 * u11
 }
 
 void luFactorization(float* a, int n, int init, int blockSize){
@@ -163,43 +160,68 @@ void solveLULinearSystem(int Nx, int Ny, float *a, float *c){
 }
 
 int main(int argc, char **argv){
-    float *a = (float *) malloc(3 * 3 * sizeof(float));
-    clock_t start, end;
+    float *a;
+    char st[100];
+    int op, size, blockSize;
 
-    a[0] = 1;
-    a[1] = 4;
-    a[2] = 3;
-    a[3] = 1;
-    a[4] = 3;
-    a[5] = 5;
-    a[6] = 1;
-    a[7] = -1;
-    a[8] = 3;
-    cout << "A ";
-    printMatrix(3, 3, a);
+    do {
+        cout << endl << "1. LU sequential" << endl;
+        cout << "2. LU block sequential" << endl;
+        cout << "3. LU block OpenMP with tasks" << endl;
+        cout << "4. LU block data parallel OpenMP" << endl;
+        cout << "5. LU block SYCL" << endl;
+        cout << "Selection?: ";
+        cin >> op;
+        if (op == 0)
+            break;
+        printf("Matrix Size ? ");
+        cin >> size;
 
-    float *c = (float *) malloc(3 * sizeof(float));
+        a = (float *) malloc(size * size * sizeof(float));
 
-    c[0] = 1;
-    c[1] = 6;
-    c[2] = 4;
-    cout << "C ";
-    printMatrix(3, 1, c);
+        for (int i = 0; i < size * size; i++) {
+            a[i] = i;
+        }
 
-    start = clock(); 
-    luBlockFactorizationSequential(a, 3, 0, 1);
-    end = clock();
+        cout << "A " << endl;
+        printMatrix(size, size, a);
+        cout << endl;
 
-    cout << start << " " << end;
-    cout << "Time: " << ((double)(end - start) / CLOCKS_PER_SEC) <<" seconds\n";
-    cout << "LU ";
-    printMatrix(3, 3, a);
+        if (op != 1)
+        {
+            cout << endl << "Block Size?" << endl;
+            cin >> blockSize;
+        }
+        
+        SYSTEMTIME Time1 = clock(); 
 
-    solveLULinearSystem(3, 3, a, c);
+        switch (op){
+            case 1:
+                luFactorization(a, size);
+                break;
+            case 2:
+                luBlockFactorizationSequential(a, size, 0, blockSize);
+                break;
+            case 3:
+                luBlockFactorizationParallelOpenMP(a, size, 0, blockSize);
+                break;
+            case 4:
+                luBlockFactorizationParallelOpenMP(a, size, 0, blockSize);
+                break;
+            case 5:
+                luBlockFactorizationParallelSYCL(a, size, 0, blockSize);
+                break;
+        }
+    
+        cout << endl << "LU" << endl;
+        printMatrix(size, size, a);
+        cout << endl;
 
-    cout << "X ";
-    printMatrix(3, 1, c);
+        SYSTEMTIME Time2 = clock();
+        sprintf(st, "Time: %3.8f seconds\n", (double)(Time2 - Time1) / CLOCKS_PER_SEC);
+        cout << st << endl;
 
+    }while (op != 0);
     return 0;
 }
 
