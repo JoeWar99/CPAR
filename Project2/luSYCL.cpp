@@ -1,3 +1,5 @@
+#include "luSYCL.hpp"
+
 void luFactorizationSYCL(float* a, int n, int init, int blockSize){
     int finalSize = init + blockSize;
     int k, j, i;

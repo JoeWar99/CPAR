@@ -1,18 +1,20 @@
 #include <iostream>
 #include <chrono>
 #include <ctime>
-#include "luOpenMP.cpp"
-#include "luSYCL.cpp"
+#include "luOpenMPTask.hpp"
+#include "luOpenMPData.hpp"
+#include "luSYCL.hpp"
 #include <cstdlib>
+#include <omp.h>
 
 #ifdef _OPENMP
-  #include <omp.h>
   #define TRUE  1
   #define FALSE 0
 #else
   #define omp_get_thread_num() 0
   #define omp_get_num_threads() 1
   #define omp_get_nested() 0
+  #define omp_set_num_threads() 0
 #endif
 
 using namespace std;
@@ -238,10 +240,10 @@ int main(int argc, char **argv){
                 luBlockFactorizationSequential(a, size, 0, blockSize);
                 break;
             case 3:
-                luBlockFactorizationParallelOpenMP(a, size, 0, blockSize);
+                luBlockFactorizationParallelOpenMPTask(a, size, 0, blockSize);
                 break;
             case 4:
-                luBlockFactorizationParallelOpenMP(a, size, 0, blockSize);
+                luBlockFactorizationParallelOpenMPData(a, size, 0, blockSize);
                 break;
             case 5:
                 luBlockFactorizationParallelSYCL(a, size, 0, blockSize);
