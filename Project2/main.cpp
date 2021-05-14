@@ -254,16 +254,17 @@ int main(int argc, char **argv){
         printMatrix(size, size, a);
         cout << endl;
 
-        // For comparison purposes
+        SYSTEMTIME Time2 = clock();
+        sprintf(st, "Time: %3.8f seconds\n", (double)(Time2 - Time1) / CLOCKS_PER_SEC);
+        cout << st << endl;
+
+
+        cout << "For comparison purposes (Sequential version)" << endl;
         luFactorization(b, size);
 
         cout << endl << "LU" << endl;
         printMatrix(size, size, b);
         cout << endl;
-
-        SYSTEMTIME Time2 = clock();
-        sprintf(st, "Time: %3.8f seconds\n", (double)(Time2 - Time1) / CLOCKS_PER_SEC);
-        cout << st << endl;
 
     }while (op != 0);
     return 0;
