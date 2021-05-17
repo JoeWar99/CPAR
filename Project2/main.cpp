@@ -240,7 +240,7 @@ int main(int argc, char **argv){
                 luBlockFactorizationSequential(a, size, 0, blockSize);
                 break;
             case 3:
-                luBlockFactorizationParallelOpenMPTask(a, size, 0, blockSize);
+                luBlockFactorizationParallelOpenMPTask(a, size, blockSize);
                 break;
             case 4:
                 luBlockFactorizationParallelOpenMPData(a, size, 0, blockSize);
