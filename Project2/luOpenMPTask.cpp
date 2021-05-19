@@ -5,15 +5,14 @@ void luFactorizationOpenMPTask(float* a, int n, int init, int blockSize){
     int k, j, i;
     int maxSize = (finalSize < n) ? finalSize : n;
 
-    for(k = init; k < maxSize && a[k * n + k] != 0; k++){
-        #pragma omp task private (i, j)
-        for(j = k + 1; j < maxSize; j++){
-            a[j * n + k] /= a[k * n + k];
-            for(i = k + 1; i < maxSize; i++){
-                a[j * n + i] -= a[j * n + k] * a[k * n + i];
+        for(k = init; k < maxSize && a[k * n + k] != 0; k++){
+            for(j = k + 1; j < maxSize; j++){
+                a[j * n + k] /= a[k * n + k];
+                for(i = k + 1; i < maxSize; i++){
+                    a[j * n + i] -= a[j * n + k] * a[k * n + i];
+                }
             }
         }
-    }
 }
 
 void luFactorizationUpperBlockOpenMPTask(float* a, int n, int init, int blockSize){
@@ -22,7 +21,7 @@ void luFactorizationUpperBlockOpenMPTask(float* a, int n, int init, int blockSiz
     int maxSize = (finalSize < n) ? finalSize : n;
 
     for(k = init; k < maxSize && a[k * n + k] != 0; k++) {
-        #pragma omp task private (i, j)
+        #pragma omp task firstprivate(k, finalSize, maxSize, n) private(i, j) shared(a)
         for(j = k + 1; j < maxSize; j++){
             for(i = finalSize; i < n; i++){
                 a[j * n + i] -= a[j * n + k] * a[k * n + i];
@@ -37,7 +36,7 @@ void luFactorizationLowerBlockOpenMPTask(float* a, int n, int init, int blockSiz
     int maxSize = (finalSize < n) ? finalSize : n;
 
     for(k = init; k < maxSize && a[k * n + k] != 0; k++){
-        #pragma omp task private (i, j)
+        #pragma omp task firstprivate(k, finalSize, maxSize, n) private(i, j) shared(a)
         for(j = finalSize; j < n; j++){
             a[j * n + k] /= a[k * n + k];
             for(i = k + 1; i < maxSize; i++){
@@ -52,22 +51,17 @@ void updateAMatrixOpenMPTask(float* a, int n, int init, int blockSize) {
     int aDelta = init + blockSize;
     int blockMax = init + blockSize;
 
-    #pragma omp parallel
+    #pragma omp taskgroup
     {
-        #pragma omp single nowait
-        {
-            for(i = aDelta; i < n; i++) {	
-                #pragma omp task firstprivate(i, aDelta, blockMax) private(j, k)
-                {
-                    for(k = init; k < blockMax; k++) {
-                        for (j = aDelta; j < n; j++) {
-                            a[j * n + i] -= a[k * n + i] * a[j * n + k];
-                        }
+        for(i = aDelta; i < n; i++) {	
+            #pragma omp task firstprivate(i, aDelta, blockMax) private(j, k) shared(a)
+            {
+                for(k = init; k < blockMax; k++) {
+                    for (j = aDelta; j < n; j++) {
+                        a[j * n + i] -= a[k * n + i] * a[j * n + k];
                     }
-                }        
-            }
-
-            #pragma omp taskwait
+                }
+            }        
         }
     }
 }
