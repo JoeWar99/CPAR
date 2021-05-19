@@ -6,6 +6,7 @@
 #include "luSYCL.hpp"
 #include <cstdlib>
 #include <omp.h>
+#include <iomanip>
 
 #ifdef _OPENMP
   #define TRUE  1
@@ -27,7 +28,7 @@ void printMatrix(int Nx, int Ny, float *a){
     {
         for (int j = 0; j < min(Ny, 10); j++)
         {
-            cout << a[i * Ny + j] << "   ";
+            cout << setw(9) << a[i * Ny + j];
         }
         cout << endl;
     }
@@ -99,16 +100,16 @@ void luFactorizationLowerBlock(float* a, int n, int init, int blockSize){
 }
 
 void updateAMatrix(float* a, int n, int init, int blockSize) {
-    int i0, i, j0, j, k0, k;
-    int aDelta = init + blockSize;
-    int blockMax = init + blockSize;
+    int finalSize = init + blockSize;
+    int k, j, i;
+    int maxSize = (finalSize < n) ? finalSize : n;
 
-    for(i = aDelta; i < n; i++) {	
-        for(k = init; k < blockMax; k++) {
-            for (j = aDelta; j < n; j++) {
-                a[j * n + i] -= a[k * n + i] * a[j * n + k];
+    for(j = finalSize; j < n; j++) {
+        for(k = init; k < maxSize; k++) {
+            for (i = finalSize; i < n; i++) {
+                a[j * n + i] -= a[j * n + k] * a[k * n + i];
             }
-        }
+        }        
     }
 
     // for (i0 = 0; i0 < n; i0 += blockSize) {
