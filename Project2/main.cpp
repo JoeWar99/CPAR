@@ -89,8 +89,8 @@ void luFactorizationLowerBlock(float* a, int n, int init, int blockSize){
     int finalSize = init + blockSize;
     int k, j, i;
 
-    for(k = init; k < finalSize && k < n && a[k * n + k] != 0; k++){
-        for(j = finalSize; j < n; j++){
+    for(j = finalSize; j < n; j++){
+        for(k = init; k < finalSize && k < n && a[k * n + k] != 0; k++){
             a[j * n + k] /= a[k * n + k];
             for(i = k + 1; i < finalSize && i < n; i++){
                 a[j * n + i] -= a[j * n + k] * a[k * n + i];
@@ -111,42 +111,25 @@ void updateAMatrix(float* a, int n, int init, int blockSize) {
             }
         }        
     }
-
-    // for (i0 = 0; i0 < n; i0 += blockSize) {
-    //     for (k0 = 0; k0 < n; k0 += blockSize) {
-    //         for (j0 = 0; j0 < n; j0 += blockSize) {
-    //             for (i = i0; i < min(i0 + blockSize, n); i++) {
-    //                 for (k = k0; k < min(k0 + blockSize, n); k++) {
-    //                     for (j = j0; j < min(j0 + blockSize, n); j++) {
-    //                         l10_u01[i * n + j] += a[i * n + k] * a[k * n + j];
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
 }
 
 void luBlockFactorizationSequential(float* a, int n, int init, int blockSize){
-    //1. Compute l00 & u00, a00 = l00 * u00;
-    luFactorization(a, n, init, blockSize);
+    for (int init = 0; init < n; init += blockSize)
+    {
+        //1. Compute l00 & u00, a00 = l00 * u00;
+        luFactorization(a, n, init, blockSize);
 
-    //2. Check for termination
-    if ((init + blockSize) >= n) {
-        return;
+        //2. Compute u01, a01 = l00 * u01;
+        luFactorizationUpperBlock(a, n, init, blockSize);
+
+        //3. Compute l10, a10 = l10 * u00;
+        luFactorizationLowerBlock(a, n, init, blockSize);
+
+        //4. Update a11 to get a11' => l11 * u11 = a11 - l10 * u01 = a11';
+        updateAMatrix(a, n, init, blockSize);
+
+        //5. Iteratively solve a11' = l11 * u11
     }
-
-    //3. Compute u01, a01 = l00 * u01;
-    luFactorizationUpperBlock(a, n, init, blockSize);
-
-    //4. Compute l10, a10 = l10 * u00;
-    luFactorizationLowerBlock(a, n, init, blockSize);
-
-    //5. Update a11 to get a11' => l11 * u11 = a11 - l10 * u01 = a11';
-    updateAMatrix(a, n, init, blockSize);
-
-    //6. Recursively solve a11' = l11 * u11
-    luBlockFactorizationSequential(a, n, init + blockSize, blockSize);
 }
 
 void solveLULinearSystem(int Nx, int Ny, float *a, float *c){
@@ -238,16 +221,16 @@ int main(int argc, char **argv){
                 luFactorization(a, size);
                 break;
             case 2:
-                luBlockFactorizationSequential(a, size, 0, blockSize);
+                luBlockFactorizationSequential(a, size, blockSize);
                 break;
             case 3:
                 luBlockFactorizationParallelOpenMPTask(a, size, blockSize);
                 break;
             case 4:
-                luBlockFactorizationParallelOpenMPData(a, size, 0, blockSize);
+                luBlockFactorizationParallelOpenMPData(a, size, blockSize);
                 break;
             case 5:
-                luBlockFactorizationParallelSYCL(a, size, 0, blockSize);
+                luBlockFactorizationParallelSYCL(a, size, blockSize);
                 break;
         }
     

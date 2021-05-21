@@ -62,30 +62,30 @@ void updateAMatrixOpenMPData(float* a, int n, int init, int blockSize) {
 
 void luBlockFactorizationParallelOpenMPData(float* a, int n, int init, int blockSize){
     #pragma omp parallel
-    #pragma omp single
     {
-        //1. Compute l00 & u00, a00 = l00 * u00;
-        luFactorizationOpenMPData(a, n, init, blockSize);
+        #pragma omp single nowait
+        {
+            for (int init = 0; init < n; init += blockSize)
+            {
+                //1. Compute l00 & u00, a00 = l00 * u00;
+                luFactorizationOpenMPData(a, n, init, blockSize);
 
-        #pragma omp task
-        //2. Compute u01, a01 = l00 * u01;
-        luFactorizationUpperBlockOpenMPData(a, n, init, blockSize);
+                #pragma omp taskgroup
+                {
+                    //2. Compute u01, a01 = l00 * u01;
+                    #pragma omp task
+                    luFactorizationUpperBlockOpenMPData(a, n, init, blockSize);
 
-        #pragma omp task
-        //3. Compute l10, a10 = l10 * u00;
-        luFactorizationLowerBlockOpenMPData(a, n, init, blockSize);
+                    //3. Compute l10, a10 = l10 * u00;
+                    #pragma omp task
+                    luFactorizationLowerBlockOpenMPData(a, n, init, blockSize);
+                }
 
-        #pragma omp taskwait
+                //4. Update a11 to get a11' => l11 * u11 = a11 - l10 * u01 = a11';
+                updateAMatrixOpenMPData(a, n, init, blockSize);
 
-        //4. Update a11 to get a11' => l11 * u11 = a11 - l10 * u01 = a11';
-        updateAMatrixOpenMPData(a, n, init, blockSize);
+                //5. Iteratively solve a11' = l11 * u11
+            }
+        }
     }
-
-    //5. Check for termination
-    if ((init + blockSize) >= n) {
-        return;
-    }
-
-    //6. Recursively solve a11' = l11 * u11
-    luBlockFactorizationParallelOpenMPData(a, n, init + blockSize, blockSize);
 }

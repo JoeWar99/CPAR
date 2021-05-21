@@ -69,24 +69,21 @@ void updateAMatrixSYCL(float* a, int n, int init, int blockSize) {
     // }
 }
 
-void luBlockFactorizationParallelSYCL(float* a, int n, int init, int blockSize){
-    //1. Compute l00 & u00, a00 = l00 * u00;
-    luFactorizationSYCL(a, n, init, blockSize);
+void luBlockFactorizationParallelSYCL(float* a, int n, int blockSize){
+    for (int init = 0; init < n; init += blockSize)
+    {
+        //1. Compute l00 & u00, a00 = l00 * u00;
+        luFactorizationSYCL(a, n, init, blockSize);
 
-    //2. Check for termination
-    if ((init + blockSize) >= n) {
-        return;
+        //2. Compute u01, a01 = l00 * u01;
+        luFactorizationUpperBlockSYCL(a, n, init, blockSize);
+
+        //3. Compute l10, a10 = l10 * u00;
+        luFactorizationLowerBlockSYCL(a, n, init, blockSize);
+
+        //4. Update a11 to get a11' => l11 * u11 = a11 - l10 * u01 = a11';
+        updateAMatrixSYCL(a, n, init, blockSize);
+
+        //5. Iteratively solve a11' = l11 * u11
     }
-
-    //3. Compute u01, a01 = l00 * u01;
-    luFactorizationUpperBlockSYCL(a, n, init, blockSize);
-
-    //4. Compute l10, a10 = l10 * u00;
-    luFactorizationLowerBlockSYCL(a, n, init, blockSize);
-
-    //5. Update a11 to get a11' => l11 * u11 = a11 - l10 * u01 = a11';
-    updateAMatrixSYCL(a, n, init, blockSize);
-
-    //6. Recursively solve a11' = l11 * u11
-    luBlockFactorizationParallelSYCL(a, n, init + blockSize, blockSize);
 }

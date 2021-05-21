@@ -1,3 +1,3 @@
 #pragma once
 
-void luBlockFactorizationParallelOpenMPData(float *a, int n, int init, int blockSize);
+void luBlockFactorizationParallelOpenMPData(float *a, int n, int blockSize);
