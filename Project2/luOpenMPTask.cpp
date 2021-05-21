@@ -35,8 +35,8 @@ void luFactorizationLowerBlockOpenMPTask(float* a, int n, int init, int blockSiz
     int k, j, i;
     int maxSize = (finalSize < n) ? finalSize : n;
 
-    for(k = init; k < maxSize && a[k * n + k] != 0; k++){
-        for(j = finalSize; j < n; j++){
+    for(j = finalSize; j < n; j++){
+        for(k = init; k < maxSize && a[k * n + k] != 0; k++){
             a[j * n + k] /= a[k * n + k];
             for(i = k + 1; i < maxSize; i++){
                 a[j * n + i] -= a[j * n + k] * a[k * n + i];
