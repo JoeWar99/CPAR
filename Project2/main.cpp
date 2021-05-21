@@ -28,7 +28,7 @@ void printMatrix(int Nx, int Ny, float *a){
     {
         for (int j = 0; j < min(Ny, 10); j++)
         {
-            cout << setw(9) << a[i * Ny + j];
+            cout << setw(9) << setprecision(4) << a[i * Ny + j];
         }
         cout << endl;
     }
@@ -61,11 +61,12 @@ void luFactorization(float* a, int numberOfEquations){
 void luFactorization(float* a, int n, int init, int blockSize){
     int finalSize = init + blockSize;
     int k, j, i;
+    int maxSize = (finalSize < n) ? finalSize : n;
 
-    for(k = init; k < finalSize && k < n && a[k * n + k] != 0; k++){
-        for(j = k + 1; j < finalSize && j < n; j++){
+    for(k = init; k < maxSize && a[k * n + k] != 0; k++){
+        for(j = k + 1; j < maxSize; j++){
            a[j * n + k] /= a[k * n + k];
-            for(i = k + 1; i < finalSize && i < n; i++){
+            for(i = k + 1; i < maxSize; i++){
                 a[j * n + i] -= a[j * n + k] * a[k * n + i];
             }
         }
@@ -75,9 +76,10 @@ void luFactorization(float* a, int n, int init, int blockSize){
 void luFactorizationUpperBlock(float* a, int n, int init, int blockSize){
     int finalSize = init + blockSize;
     int k, j, i;
+    int maxSize = (finalSize < n) ? finalSize : n;
 
-    for(k = init; k < finalSize && k < n && a[k * n + k] != 0; k++){
-        for(j = k + 1; j < finalSize && j < n; j++){
+    for(k = init; k < maxSize && a[k * n + k] != 0; k++){
+        for(j = k + 1; j < maxSize; j++){
             for(i = finalSize; i < n; i++){
                 a[j * n + i] -= a[j * n + k] * a[k * n + i];
             }
@@ -88,11 +90,12 @@ void luFactorizationUpperBlock(float* a, int n, int init, int blockSize){
 void luFactorizationLowerBlock(float* a, int n, int init, int blockSize){
     int finalSize = init + blockSize;
     int k, j, i;
+    int maxSize = (finalSize < n) ? finalSize : n;
 
     for(j = finalSize; j < n; j++){
-        for(k = init; k < finalSize && k < n && a[k * n + k] != 0; k++){
+        for(k = init; k < maxSize && a[k * n + k] != 0; k++){
             a[j * n + k] /= a[k * n + k];
-            for(i = k + 1; i < finalSize && i < n; i++){
+            for(i = k + 1; i < maxSize; i++){
                 a[j * n + i] -= a[j * n + k] * a[k * n + i];
             }
         }
@@ -113,7 +116,7 @@ void updateAMatrix(float* a, int n, int init, int blockSize) {
     }
 }
 
-void luBlockFactorizationSequential(float* a, int n, int init, int blockSize){
+void luBlockFactorizationSequential(float* a, int n, int blockSize){
     for (int init = 0; init < n; init += blockSize)
     {
         //1. Compute l00 & u00, a00 = l00 * u00;
@@ -193,8 +196,7 @@ int main(int argc, char **argv){
         #pragma omp parallel for
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
-                a[i * size + j] = rand() % 100;
-                b[i * size + j] = a[i * size + j];
+                a[i * size + j] = b[i * size + j] = (i == j ? size : 1);
             }
         }
 
