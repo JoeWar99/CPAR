@@ -198,12 +198,11 @@ void LUDecompose(int matrixSize, double *A, double *L, double *U) {
 		UpdateDiagonalSubmatrix(bias, BlockSize, matrixSize, A, L, U);
 	}
 }
-
+/*
 int main(int argc, char **argv) {
 
-
 	double *A, *L, *U;
-	int N = 1024;
+	int N = 8192;
     
 	int triangularMatrixSize = N*(N + 1)/2;
     A = (double *) malloc(N * N * sizeof(double));
@@ -226,13 +225,13 @@ int main(int argc, char **argv) {
 	cout << "Time elapsed";
     cout <<  timer.getElapsed();
 
-/*	WriteLMatrixToFile(argv[2], L, N);
-	WriteUMatrixToFile(argv[3], U, N);
-	WriteTimeToFile(argv[4], timer.getElapsed());*/
+	//WriteLMatrixToFile(argv[2], L, N);
+	//WriteUMatrixToFile(argv[3], U, N);
+	//WriteTimeToFile(argv[4], timer.getElapsed());
 	
 	free(A);
 	free(L);
 	free(U);
 	
 	return 0;
-}
+}*/
