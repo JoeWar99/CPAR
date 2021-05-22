@@ -6,8 +6,8 @@
 
 using namespace std;
 
-#define BlockSize 60
-#define BlockGrainSize 100 //BlockGrainSize >= BlockSize; Good if BlockGrainSize < 2*BlockSize
+#define BlockSize 24
+#define BlockGrainSize 24 //BlockGrainSize >= BlockSize; Good if BlockGrainSize < 2*BlockSize
 
 double* ReadMatrixFromFile(char *fileName, int &N) {
 	FILE *pFile = fopen(fileName, "r");
@@ -199,36 +199,22 @@ void LUDecompose(int matrixSize, double *A, double *L, double *U) {
 	}
 }
 
-int main(int argc, char *argv[]) {
-	if(argc < 5) {
-        printf("Error!\n");
-        return 0;
-    }
-    
-    a = (float *) malloc(size * size * sizeof(float));
-    b = (float *) malloc(size * size * sizeof(float));
+int main(int argc, char **argv) {
 
-    #pragma omp parallel for
-    for (int i = 0; i < size; i++) {
-        for (int j = 0; j < size; j++) {
-            a[i * size + j] = rand() % 100;
-            b[i * size + j] = a[i * size + j];
-        }
-    }
 
 	double *A, *L, *U;
-	int N;
-
-    N = 1024
-
-	A = ReadMatrixFromFile(argv[1], N);
-	if (!A) {
-		return 0;
-	}
-
+	int N = 1024;
+    
 	int triangularMatrixSize = N*(N + 1)/2;
-	L = (double*)_mm_malloc(triangularMatrixSize*sizeof(double), 32);
-	U = (double*)_mm_malloc(triangularMatrixSize*sizeof(double), 32);
+    A = (double *) malloc(N * N * sizeof(double));
+	L = (double*)malloc(triangularMatrixSize*sizeof(double));
+	U = (double*)malloc(triangularMatrixSize*sizeof(double));
+
+	for (int i = 0; i < N; i++) {
+		for (int j = 0; j < N; j++) {
+			A[i * N + j] = (i == j ? N : 1);
+		}
+	}
 
 	omp_set_nested(1);
 
@@ -237,15 +223,16 @@ int main(int argc, char *argv[]) {
 	LUDecompose(N, A, L, U);
 	timer.stop();
 	
+	cout << "Time elapsed";
     cout <<  timer.getElapsed();
 
 /*	WriteLMatrixToFile(argv[2], L, N);
 	WriteUMatrixToFile(argv[3], U, N);
 	WriteTimeToFile(argv[4], timer.getElapsed());*/
 	
-	_mm_free(A);
-	_mm_free(L);
-	_mm_free(U);
+	free(A);
+	free(L);
+	free(U);
 	
 	return 0;
 }
