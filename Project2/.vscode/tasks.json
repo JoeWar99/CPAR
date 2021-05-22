@@ -10,7 +10,8 @@
                 // "${fileDirname}\\*.h", 
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe",
-                "-fopenmp"
+                "-fopenmp",
+                "-O2"
             ],
             "options": {
                 "cwd": "${fileDirname}"

@@ -67,7 +67,6 @@ void updateAMatrixOpenMPData(float* a, int n, int init, int blockSize) {
 void luBlockFactorizationParallelOpenMPData(float* a, int n, int blockSize){
     #pragma omp parallel
     {
-        int chunkSize;
         for (int init = 0; init < n; init += blockSize)
         {
             //1. Compute l00 & u00, a00 = l00 * u00;
