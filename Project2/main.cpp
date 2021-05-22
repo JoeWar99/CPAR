@@ -7,15 +7,11 @@
 #include <cstdlib>
 #include <omp.h>
 #include <iomanip>
+#include "timer.h"
 
 #ifdef _OPENMP
   #define TRUE  1
   #define FALSE 0
-#else
-  #define omp_get_thread_num() 0
-  #define omp_get_num_threads() 1
-  #define omp_get_nested() 0
-  #define omp_set_num_threads() 0
 #endif
 
 using namespace std;
@@ -165,13 +161,13 @@ int main(int argc, char **argv){
         if (omp_get_dynamic()) {printf("Warning: dynamic adjustment of threads has been set\n");}
         (void) omp_set_num_threads(3);
 
-        (void) omp_set_nested(TRUE);
-        if (! omp_get_nested()) {printf("Warning: nested parallelism not set\n");}
+        (void) omp_set_max_active_levels(TRUE);
+        if (! omp_get_max_active_levels()) {printf("Warning: nested parallelism not set\n");}
     #endif
 
    printf("Nested parallelism is %s\n", 
-           omp_get_nested() ? "supported" : "not supported");
-    float *a, *b;
+           omp_get_max_active_levels() ? "supported" : "not supported");
+    float *a;
     char st[100];
     int op, size, blockSize, numProcessors;
     srand (time(NULL));
@@ -190,13 +186,11 @@ int main(int argc, char **argv){
         printf("Matrix Size ? ");
         cin >> size;
 
-        a = (float *) malloc(size * size * sizeof(float));
-        b = (float *) malloc(size * size * sizeof(float));
+        a = (float *) malloc(size * size * sizeof(float));   
 
-        #pragma omp parallel for
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
-                a[i * size + j] = b[i * size + j] = (i == j ? size : 1);
+                a[i * size + j] = (i == j ? size : 1);
             }
         }
 
@@ -204,19 +198,20 @@ int main(int argc, char **argv){
         printMatrix(size, size, a);
         cout << endl;
 
-
-
         if (op != 1)
         {
             cout << endl << "Block Size?" << endl;
             cin >> blockSize;
-            cout << endl << "Num of processing units? Max: " << omp_get_num_procs() << endl;
-            cin >> numProcessors;
-            numProcessors = min(numProcessors, omp_get_num_procs());
-            omp_set_num_threads(numProcessors);
+            if(op != 5){
+                cout << endl << "Num of processing units? Max: " << omp_get_num_procs() << endl;
+                cin >> numProcessors;
+                numProcessors = min(numProcessors, omp_get_num_procs());
+                omp_set_num_threads(numProcessors);
+            }
         }
         
-        SYSTEMTIME Time1 = clock(); 
+        Timer timer;
+        timer.start();
 
         switch (op){
             case 1:
@@ -235,22 +230,19 @@ int main(int argc, char **argv){
                 luBlockFactorizationParallelSYCL(a, size, blockSize);
                 break;
         }
+
+        timer.stop();
+	
     
         cout << endl << "LU" << endl;
         printMatrix(size, size, a);
         cout << endl;
 
         SYSTEMTIME Time2 = clock();
-        sprintf(st, "Time: %3.8f seconds\n", (double)(Time2 - Time1) / CLOCKS_PER_SEC);
+        sprintf(st, "Time: %3.8f seconds\n", (double)timer.getElapsed());
         cout << st << endl;
 
-
-        cout << "For comparison purposes (Sequential version)" << endl;
-        luFactorization(b, size);
-
-        cout << endl << "LU" << endl;
-        printMatrix(size, size, b);
-        cout << endl;
+        free(a);
 
     }while (op != 0);
     return 0;
