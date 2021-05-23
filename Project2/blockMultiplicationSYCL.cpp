@@ -25,7 +25,7 @@ void printResultAndTimeSYCL(int size, double *phc){
 }
 
 void OnMultBlockOpenSYCL(size_t size, size_t blockSize, device &device){
-    size_t niterations= (size_t) ceil(((float) size) / blockSize);
+    size_t niterations= size / blockSize;
     size_t i, j;
     double * pha, * phb, * phc;
 
@@ -56,23 +56,28 @@ void OnMultBlockOpenSYCL(size_t size, size_t blockSize, device &device){
         {
             auto a = phaBuf.get_access<access::mode::read>(cgh);
             auto b = phbBuf.get_access<access::mode::read>(cgh);
-            auto c = phcBuf.get_access<access::mode::discard_write>(cgh);
+            auto c = phcBuf.get_access<access::mode::read_write>(cgh);
 
             cgh.parallel_for<class simple_test>(range<3>{niterations, niterations, niterations}, [=](id<3> id0)
             {
-                size_t i, j, k;
-                for (i = id0[0]; i < min(id0[0] + blockSize, size); i++)
+                size_t l, m, k;
+                double sum;
+                for (l = id0[0] * blockSize; l < std::min(id0[0] * blockSize + blockSize, size); l++)
                 {
-                    for (k = id0[1]; k < min(id0[1] + blockSize, size); k++)
+                    for (m = id0[1] * blockSize; m < std::min(id0[1] * blockSize + blockSize, size); m++)
                     {
-                        for (j = id0[2]; j < min(id0[2] + blockSize, size); j++)
-                        {
-                            c[i * size + j] += a[i * size + k] * b[k * size + j];
+                        sum = 0;
+                        for (k = id0[2] * blockSize; k < std::min(id0[2] * blockSize + blockSize, size); k++)
+                        { 
+                            sum += a[l * size + k] * b[k * size + m];
                         }
+                        c[l * size + m] += sum;
                     }
                 }
             });
         });
+
+        myQueue.wait();
     }
 
     auto t2 = high_resolution_clock::now();
