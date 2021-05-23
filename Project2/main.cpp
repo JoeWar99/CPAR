@@ -1,12 +1,14 @@
 #include <iostream>
 #include <chrono>
 #include <ctime>
+#include <cstdlib>
+#include <cstdio>
+#include <omp.h>
+#include <iomanip>
+#include <CL/sycl.hpp>
 #include "luOpenMPTask.hpp"
 #include "luOpenMPData.hpp"
 #include "luSYCL.hpp"
-#include <cstdlib>
-#include <omp.h>
-#include <iomanip>
 #include "timer.h"
 
 #ifdef _OPENMP
@@ -169,22 +171,67 @@ int main(int argc, char **argv){
            omp_get_max_active_levels() ? "supported" : "not supported");
     float *a;
     char st[100];
-    int op, size, blockSize, numProcessors;
+    int op, size, blockSize, numProcessors, syclPlatform, syclDevice;
+    cl::sycl::device choosenDevice;
     srand (time(NULL));
 
+    ofstream myfile;
 
+    FILE *fp;
+    fp = fopen("blockCode.txt","w");
+
+
+
+    vector<int> MatrixSize = { 1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192 };
+    vector<int> BlockSize = { 4, 8, 16, 32, 64, 128, 256 };
+    vector<int> numberOfThreads = {4, 8, 12, 16, 20, 24};
+
+    int matrixSizeIndex = 0;
+    int blockSizeIndex = 0;
+    int numberOfThreadsIndex = 0;
+    fprintf(fp, "Block Sequential Code\n");
+    op = 2;
     do {
-        cout << endl << "1. LU sequential" << endl;
+        /*cout << endl << "1. LU sequential" << endl;
         cout << "2. LU block sequential" << endl;
         cout << "3. LU block OpenMP with tasks" << endl;
         cout << "4. LU block data parallel OpenMP" << endl;
         cout << "5. LU block SYCL" << endl;
         cout << "Selection?: ";
-        cin >> op;
-        if (op == 0)
+        //cin >> op;*/
+
+
+        if(BlockSizeIndex  >= BlockSize.size()){
+            blockSizeIndex = 0;
+            matrixSizeIndex++;
+            if(matrixSizeIndex >= MatrixSize.size()){
+                matrixSizeIndex = 0;
+                if(op == 2){
+                    fprintf(fp, "Block Sequential openMP Tasks Code\n");
+                    op++;
+                }
+                else if(op == 3){
+                    fprintf(fp, "Block Sequential openMP data Code\n");
+                    op++;
+                }
+                else if(op == 4){   
+                    op++;
+                }
+            }
+        }
+
+        if(op == 5){
             break;
-        printf("Matrix Size ? ");
-        cin >> size;
+        }
+
+       
+        //printf("Matrix Size ? ");
+        //cin >> size;
+
+        
+    
+
+        size = MatrixSize[matrixSizeIndex];
 
         a = (float *) malloc(size * size * sizeof(float));   
 
@@ -194,21 +241,48 @@ int main(int argc, char **argv){
             }
         }
 
-        cout << "A " << endl;
-        printMatrix(size, size, a);
-        cout << endl;
+        //cout << "A " << endl;
+        //printMatrix(size, size, a);
+        //cout << endl;
 
-        if (op != 1)
+
+
+       /* if (op != 1)
         {
             cout << endl << "Block Size?" << endl;
-            cin >> blockSize;
-            if(op != 5){
-                cout << endl << "Num of processing units? Max: " << omp_get_num_procs() << endl;
-                cin >> numProcessors;
-                numProcessors = min(numProcessors, omp_get_num_procs());
-                omp_set_num_threads(numProcessors);
+            //cin >> blockSize;
+                
+            cout << endl << "Num of processing units? Max: " << omp_get_num_procs() << endl;
+            cin >> numProcessors;
+            numProcessors = min(numProcessors, omp_get_num_procs());
+            omp_set_num_threads(numProcessors);
+            
+            if(op == 5){                
+                int i = 0;
+
+                std::cout << "Default Device: "
+                        << sycl::device(sycl::default_selector()).get_info<sycl::info::device::name>()
+                        << std::endl;
+                cout << "Available Devices: " << endl;
+                for (auto device : sycl::device::get_devices(sycl::info::device_type::all)) {
+                    std::cout << i <<": Device: "
+                        << device.get_info<sycl::info::device::name>()
+                        << std::endl;
+                        i++;
+                }
+
+                cout << "Choose a device: ";
+                cin >> syclDevice;
+
+                choosenDevice = sycl::device::get_devices(sycl::info::device_type::all)[syclDevice];
+                try {
+                    d = sycl::device(sycl::gpu_selector());
+                } catch (exception const &e) {
+                    fprintf(stdout, "Cannot select a GPU\n%s\nSwitching to CPU\n", e.what());
+                    d = sycl::device(sycl::cpu_selector());
+                }    
             }
-        }
+        }*/
         
         Timer timer;
         timer.start();
@@ -227,24 +301,33 @@ int main(int argc, char **argv){
                 luBlockFactorizationParallelOpenMPData(a, size, blockSize);
                 break;
             case 5:
-                luBlockFactorizationParallelSYCL(a, size, blockSize);
+                luBlockFactorizationParallelSYCL(a, size, blockSize, choosenDevice);
                 break;
         }
 
         timer.stop();
 	
     
-        cout << endl << "LU" << endl;
+        /*cout << endl << "LU" << endl;
         printMatrix(size, size, a);
-        cout << endl;
+        cout << endl;*/
 
         SYSTEMTIME Time2 = clock();
-        sprintf(st, "Time: %3.8f seconds\n", (double)timer.getElapsed());
-        cout << st << endl;
+        /*sprintf(st, "Time: %3.8f seconds\n", (double)timer.getElapsed());
+        cout << st << endl;*/
+
+        cout << size << endl;
+
+        fprintf(fp, "Matrix Size %d -> Block Size %d -> Time %f \n", size, (double)timer.getElapsed());
+
+        fflush(fp);
 
         free(a);
+        matrixSizeIndex++;
 
     }while (op != 0);
+
+    fclose(fp);
     return 0;
 }
 

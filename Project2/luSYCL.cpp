@@ -1,5 +1,4 @@
 #include "luSYCL.hpp"
-#include <CL/sycl.hpp>
 #include <iostream>
 using namespace cl::sycl;
 using namespace std;
@@ -67,15 +66,16 @@ void updateAMatrixSYCL(buffer<float, 1> &matrix, size_t n, size_t init, size_t b
     });
 }
 
-void luBlockFactorizationParallelSYCL(float* a, size_t n, size_t blockSize){
+void luBlockFactorizationParallelSYCL(float* a, size_t n, size_t blockSize, device &device){
     
     // By wrapping all the SYCL work in a {} block, we ensure all
     // SYCL tasks must complete before exiting the block,
     // because the destructor of resultBuf will wait.
     {
-        // Create default queue to enqueue work
-        queue myQueue; 
-        
+
+        queue myQueue(device);
+        std::cout << "Running on " << myQueue.get_device().get_info<sycl::info::device::name>() << "\n";
+
         // Wrap our data variable in a buffer
         buffer<float, 1> resultBuf { a, range<1> { n * n } };
 
