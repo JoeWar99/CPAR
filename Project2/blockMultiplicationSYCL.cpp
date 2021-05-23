@@ -6,7 +6,6 @@
 #include <cstdlib>
 #include <iostream>
 #include <algorithm>
-#include <CL/sycl.hpp>
 #include "blockMultiplicationSYCL.hpp"
 
 using namespace cl::sycl;
@@ -21,13 +20,13 @@ void printResultAndTimeSYCL(int size, double *phc){
 }
 
 void OnMultBlockOpenSYCL(size_t size, size_t blockSize, device &device){
-    size_t niterations= size / blockSize;
-    size_t i, j;
+    size_t niterations = size * size / blockSize;
+    size_t i, j, block;
     double * pha, * phb, * phc;
 
     pha = (double*)malloc((size * size) * sizeof(double));
     phb = (double*)malloc((size * size) * sizeof(double));
-    phc = (double*)malloc((size * size) * sizeof(double));
+    phc = (double*)malloc((size * size) * sizeof(double));    
 
     for (i = 0; i < size; i++) {
         for (j = 0; j < size; j++) {
@@ -49,28 +48,20 @@ void OnMultBlockOpenSYCL(size_t size, size_t blockSize, device &device){
 
         myQueue.submit([&](handler &cgh)
         {
+            size_t myBlock = block;
             auto a = phaBuf.get_access<access::mode::read>(cgh);
             auto b = phbBuf.get_access<access::mode::read>(cgh);
             auto c = phcBuf.get_access<access::mode::read_write>(cgh);
 
-            cgh.parallel_for<class simple_test>(range<3>{niterations, niterations, niterations}, [=](id<3> id0)
+            cgh.parallel_for<class block_mul>(range<3>{ niterations, blockSize, size }, [=](id<3> id)
             {
-                size_t l, m, k;
-                double sum;
-                for (l = id0[0] * blockSize; l < std::min(id0[0] * blockSize + blockSize, size); l++)
-                {
-                    for (m = id0[1] * blockSize; m < std::min(id0[1] * blockSize + blockSize, size); m++)
-                    {
-                        sum = 0;
-                        for (k = id0[2] * blockSize; k < std::min(id0[2] * blockSize + blockSize, size); k++)
-                        { 
-                            sum += a[l * size + k] * b[k * size + m];
-                        }
-                        c[l * size + m] += sum;
-                    }
-                }
+                size_t l = (id[1] + id[0] * blockSize) / size;
+                size_t m = (id[1] + id[0] * blockSize) % size;
+                size_t k = id[2];
+                c[l * size + k] += a[l * size + m] * b[m * size + k];
             });
         });
+
 
         myQueue.wait();
     }
