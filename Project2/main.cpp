@@ -182,6 +182,7 @@ int main(int argc, char **argv){
         cout << "3. LU block OpenMP with tasks" << endl;
         cout << "4. LU block data parallel OpenMP" << endl;
         cout << "5. LU block SYCL" << endl;
+        cout << "0. Exit" << endl;
         cout << "Selection?: ";
         cin >> op;
 
