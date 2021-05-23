@@ -1,17 +1,32 @@
-#include <CL/sycl.hpp>
-#include <chrono>
 #include <cmath>
+#include <ctime>
+#include <chrono>
+#include <cstdio>
+#include <iomanip>
+#include <cstdlib>
+#include <iostream>
+#include <algorithm>
+#include <CL/sycl.hpp>
+#include "blockMultiplicationSYCL.hpp"
 
-using namespace std;
+using namespace cl::sycl;
 using std::chrono::high_resolution_clock;
 using std::chrono::duration_cast;
 using std::chrono::duration;
-using std::chrono::seconds;
+using std::chrono::milliseconds;
 
-void OnMultBlockOpenSYCL (int size, int blockSize, device &device){
-    int i0, i, j0, j, k0, k;
-    int niterations= (int) ceil(((float) size) / block_size);
+void printResultAndTimeSYCL(int size, double *phc){
+    std::cout << "Result matrix: " << std::endl;
+    for(size_t i=0; i<1; i++)
+    {	for(size_t j=0; j<std::min(10,size * size); j++)
+            std::cout << phc[j] << " ";
+    }
+    std::cout << std::endl;
+}
 
+void OnMultBlockOpenSYCL(size_t size, size_t blockSize, device &device){
+    size_t niterations= (size_t) ceil(((float) size) / blockSize);
+    size_t i, j;
     double * pha, * phb, * phc;
 
     pha = (double*)malloc((size * size) * sizeof(double));
@@ -33,31 +48,38 @@ void OnMultBlockOpenSYCL (int size, int blockSize, device &device){
         std::cout << "Running on " << myQueue.get_device().get_info<sycl::info::device::name>() << "\n";
 
         // Wrap our data variable in a buffer
-        buffer<float, 1> phaBuf { pha, range<1> { size * size } };
-        buffer<float, 1> phbBuf { phb, range<1> { size * size } };
-        buffer<float, 1> phcBuf { phc, range<1> { size * size } };
+        buffer<double, 1> phaBuf { pha, range<1> { size * size } };
+        buffer<double, 1> phbBuf { phb, range<1> { size * size } };
+        buffer<double, 1> phcBuf { phc, range<1> { size * size } };
 
-        myQueue.submit([&](handler & cgh) {
+        myQueue.submit([&](handler &cgh)
+        {
             auto a = phaBuf.get_access<access::mode::read>(cgh);
             auto b = phbBuf.get_access<access::mode::read>(cgh);
-            auto c = phcBuf.get_access<access::mode::write_discard>(cgh);
+            auto c = phcBuf.get_access<access::mode::discard_write>(cgh);
 
-            cgh.parallel_for<class simple_test>(range<3>{niterations, niterations, niterations},[=](id<3> id0)
+            cgh.parallel_for<class simple_test>(range<3>{niterations, niterations, niterations}, [=](id<3> id0)
             {
-                cgh.parallel_for<class simple_test>(range<3>{min(blockSize, size - id0[0] * blockSize), min(blockSize, size - id0[1] * blockSize), min(blockSize, size - id0[2] * blockSize)},
-                    id<3>{id0[0] * blockSize, id0[1] * blockSize, id0[2] * blockSize},[=](id<3> id)
+                size_t i, j, k;
+                for (i = id0[0]; i < min(id0[0] + blockSize, size); i++)
                 {
-                    c[id[0] * size + id[1]] += a[id[0] * size + id[2]] * b[id[2] * size + id[1]];
-                });
+                    for (k = id0[1]; k < min(id0[1] + blockSize, size); k++)
+                    {
+                        for (j = id0[2]; j < min(id0[2] + blockSize, size); j++)
+                        {
+                            c[i * size + j] += a[i * size + k] * b[k * size + j];
+                        }
+                    }
+                }
             });
-        });        
+        });
     }
 
     auto t2 = high_resolution_clock::now();
-    auto s_int = duration_cast<seconds>(t2 - t1);
-    std::cout << s_int.count() << "s\n";
+    auto s_int = duration_cast<milliseconds>(t2 - t1);
+    std::cout << s_int.count() << "ms\n";
 
-    printResultAndTime(size, phc);
+    printResultAndTimeSYCL(size, phc);
 
     free(pha);
     free(phb);

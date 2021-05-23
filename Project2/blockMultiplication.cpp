@@ -6,22 +6,18 @@
 #include <cstdlib>
 #include <chrono>
 #include <CL/sycl.hpp>
+#include "blockMultiplicationSYCL.hpp"
 
 #ifdef _OPENMP
   #define TRUE  1
   #define FALSE 0
-#else
-  #define omp_get_thread_num() 0
-  #define omp_get_num_threads() 1
-  #define omp_get_nested() 0
-  #define omp_set_num_threads() 0
 #endif
 
 using namespace std;
 using std::chrono::high_resolution_clock;
 using std::chrono::duration_cast;
 using std::chrono::duration;
-using std::chrono::seconds;
+using std::chrono::milliseconds;
 
 //g++ blockMultiplication.cpp -o blockMultiplication -fopenmp
 
@@ -69,8 +65,8 @@ void OnMultBlockSequential(int size, int blockSize)
     }
 
     auto t2 = high_resolution_clock::now();
-    auto s_int = duration_cast<seconds>(t2 - t1);
-    std::cout << s_int.count() << "s\n";
+    auto s_int = duration_cast<milliseconds>(t2 - t1);
+    std::cout << s_int.count() << "ms\n";
 
     printResultAndTime(size, phc);
 
@@ -119,8 +115,8 @@ void OnMultBlockOpenMP(int size, int blockSize)
         }
 
     auto t2 = high_resolution_clock::now();
-    auto s_int = duration_cast<seconds>(t2 - t1);
-    std::cout << s_int.count() << "s\n";
+    auto s_int = duration_cast<milliseconds>(t2 - t1);
+    std::cout << s_int.count() << "ms\n";
 
     printResultAndTime(size, phc);
 
@@ -196,7 +192,7 @@ int main (int argc, char *argv[])
                 cin >> syclDevice;
 
                 choosenDevice = sycl::device::get_devices(sycl::info::device_type::all)[syclDevice];
-                OnMultBlockOpenMP(size, blockSize, choosenDevice);
+                OnMultBlockOpenSYCL(size, blockSize, choosenDevice);
                 break;
         }
     }while (op != 0);

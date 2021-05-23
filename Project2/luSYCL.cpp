@@ -56,7 +56,7 @@ void updateAMatrixSYCL(buffer<float, 1> &matrix, size_t n, size_t init, size_t b
     size_t finalSize = init + blockSize;
     size_t maxSize = (finalSize < n) ? finalSize : n;
 
-    // Request access to the bufer
+    // Request access to the buffer
     auto a = matrix.get_access<access::mode::read_write>(cgh);
 
     // Enqueue a parallel_for task.
