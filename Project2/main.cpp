@@ -194,11 +194,6 @@ int main(int argc, char **argv){
         printf("Matrix Size ? ");
         cin >> size;
 
-        
-    
-
-        size = MatrixSize[matrixSizeIndex];
-
         a = (float *) malloc(size * size * sizeof(float));   
 
         for (int i = 0; i < size; i++) {
@@ -241,12 +236,16 @@ int main(int argc, char **argv){
                 cin >> syclDevice;
 
                 choosenDevice = sycl::device::get_devices(sycl::info::device_type::all)[syclDevice];
+                
+                /*
+                sycl::device d;
                 try {
                     d = sycl::device(sycl::gpu_selector());
                 } catch (exception const &e) {
                     fprintf(stdout, "Cannot select a GPU\n%s\nSwitching to CPU\n", e.what());
                     d = sycl::device(sycl::cpu_selector());
-                }    
+                }  
+                */  
             }
         }
         
@@ -282,18 +281,9 @@ int main(int argc, char **argv){
         sprintf(st, "Time: %3.8f seconds\n", (double)timer.getElapsed());
         cout << st << endl;
 
-        cout << size << endl;
-
-        fprintf(fp, "Matrix Size %d -> Block Size %d -> Time %f \n", size, (double)timer.getElapsed());
-
-        fflush(fp);
-
         free(a);
-        matrixSizeIndex++;
-
     }while (op != 0);
 
-    fclose(fp);
     return 0;
 }
 
