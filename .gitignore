@@ -32,3 +32,5 @@
 *.app
 
 Project2/blockMultiplication
+
+.vscode/

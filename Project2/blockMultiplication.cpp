@@ -5,6 +5,7 @@
 #include <ctime>
 #include <cstdlib>
 #include <chrono>
+#include <CL/sycl.hpp>
 
 #ifdef _OPENMP
   #define TRUE  1
@@ -149,10 +150,14 @@ int main (int argc, char *argv[])
     long long values[2];
     int ret;
 
+    int syclPlatform, syclDevice;
+    cl::sycl::device choosenDevice;
+
     op=1;
     do {
         cout << endl << "1. Block Multiplication Sequential" << endl;
         cout << "2. Block Multiplication Parallel OpenMP" << endl;
+        cout << "3. Block Multiplication Parallel SYCL" << endl;
         cout << "Selection?: ";
         cin >>op;
         if (op == 0)
@@ -172,6 +177,26 @@ int main (int argc, char *argv[])
                 break;
             case 2:
                 OnMultBlockOpenMP(size, blockSize);
+                break;
+            case 3:
+                int i = 0;
+
+                std::cout << "Default Device: "
+                        << sycl::device(sycl::default_selector()).get_info<sycl::info::device::name>()
+                        << std::endl;
+                cout << "Available Devices: " << endl;
+                for (auto device : sycl::device::get_devices(sycl::info::device_type::all)) {
+                    std::cout << i <<": Device: "
+                        << device.get_info<sycl::info::device::name>()
+                        << std::endl;
+                        i++;
+                }
+
+                cout << "Choose a device: ";
+                cin >> syclDevice;
+
+                choosenDevice = sycl::device::get_devices(sycl::info::device_type::all)[syclDevice];
+                OnMultBlockOpenMP(size, blockSize, choosenDevice);
                 break;
         }
     }while (op != 0);
