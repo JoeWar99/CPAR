@@ -175,58 +175,24 @@ int main(int argc, char **argv){
     cl::sycl::device choosenDevice;
     srand (time(NULL));
 
-    ofstream myfile;
-
-    FILE *fp;
-    fp = fopen("blockCode.txt","w");
-
-
-
-    vector<int> MatrixSize = { 1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192 };
-    vector<int> BlockSize = { 4, 8, 16, 32, 64, 128, 256 };
-    vector<int> numberOfThreads = {4, 8, 12, 16, 20, 24};
-
-    int matrixSizeIndex = 0;
-    int blockSizeIndex = 0;
-    int numberOfThreadsIndex = 0;
-    fprintf(fp, "Block Sequential Code\n");
     op = 2;
     do {
-        /*cout << endl << "1. LU sequential" << endl;
+        cout << endl << "1. LU sequential" << endl;
         cout << "2. LU block sequential" << endl;
         cout << "3. LU block OpenMP with tasks" << endl;
         cout << "4. LU block data parallel OpenMP" << endl;
         cout << "5. LU block SYCL" << endl;
         cout << "Selection?: ";
-        //cin >> op;*/
+        cin >> op;
 
 
-        if(BlockSizeIndex  >= BlockSize.size()){
-            blockSizeIndex = 0;
-            matrixSizeIndex++;
-            if(matrixSizeIndex >= MatrixSize.size()){
-                matrixSizeIndex = 0;
-                if(op == 2){
-                    fprintf(fp, "Block Sequential openMP Tasks Code\n");
-                    op++;
-                }
-                else if(op == 3){
-                    fprintf(fp, "Block Sequential openMP data Code\n");
-                    op++;
-                }
-                else if(op == 4){   
-                    op++;
-                }
-            }
-        }
-
-        if(op == 5){
+        if(op == 0){
             break;
         }
 
        
-        //printf("Matrix Size ? ");
-        //cin >> size;
+        printf("Matrix Size ? ");
+        cin >> size;
 
         
     
@@ -241,16 +207,16 @@ int main(int argc, char **argv){
             }
         }
 
-        //cout << "A " << endl;
-        //printMatrix(size, size, a);
-        //cout << endl;
+        cout << "A " << endl;
+        printMatrix(size, size, a);
+        cout << endl;
 
 
 
-       /* if (op != 1)
+       if (op != 1)
         {
             cout << endl << "Block Size?" << endl;
-            //cin >> blockSize;
+            cin >> blockSize;
                 
             cout << endl << "Num of processing units? Max: " << omp_get_num_procs() << endl;
             cin >> numProcessors;
@@ -282,7 +248,7 @@ int main(int argc, char **argv){
                     d = sycl::device(sycl::cpu_selector());
                 }    
             }
-        }*/
+        }
         
         Timer timer;
         timer.start();
@@ -308,13 +274,13 @@ int main(int argc, char **argv){
         timer.stop();
 	
     
-        /*cout << endl << "LU" << endl;
+        cout << endl << "LU" << endl;
         printMatrix(size, size, a);
-        cout << endl;*/
+        cout << endl;
 
         SYSTEMTIME Time2 = clock();
-        /*sprintf(st, "Time: %3.8f seconds\n", (double)timer.getElapsed());
-        cout << st << endl;*/
+        sprintf(st, "Time: %3.8f seconds\n", (double)timer.getElapsed());
+        cout << st << endl;
 
         cout << size << endl;
 
