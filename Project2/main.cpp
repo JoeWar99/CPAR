@@ -10,6 +10,8 @@
 #include "luOpenMPData.hpp"
 #include "luSYCL.hpp"
 #include "timer.h"
+#include "blockMultiplication.hpp"
+#include "blockMultiplicationSYCL.hpp"
 
 #ifdef _OPENMP
   #define TRUE  1
@@ -175,13 +177,15 @@ int main(int argc, char **argv){
     cl::sycl::device choosenDevice;
     srand (time(NULL));
 
-    op = 2;
     do {
         cout << endl << "1. LU sequential" << endl;
         cout << "2. LU block sequential" << endl;
         cout << "3. LU block OpenMP with tasks" << endl;
         cout << "4. LU block data parallel OpenMP" << endl;
         cout << "5. LU block SYCL" << endl;
+        cout << "6. Matrix Block Multiplication Sequential" << endl;
+        cout << "7. Matrix Block Multiplication openMP" << endl;
+        cout << "8. Matrix Block Multiplication SYCL" << endl;
         cout << "0. Exit" << endl;
         cout << "Selection?: ";
         cin >> op;
@@ -203,29 +207,31 @@ int main(int argc, char **argv){
             }
         }
 
-        cout << "A " << endl;
-        printMatrix(size, size, a);
-        cout << endl;
-
-
+        if(op != 6 && op != 7 && op != 8){
+            cout << "A " << endl;
+            printMatrix(size, size, a);
+            cout << endl;
+        }
 
        if (op != 1)
         {
             cout << endl << "Block Size?" << endl;
             cin >> blockSize;
                 
-            cout << endl << "Num of processing units? Max: " << omp_get_num_procs() << endl;
-            cin >> numProcessors;
-            numProcessors = min(numProcessors, omp_get_num_procs());
-            omp_set_num_threads(numProcessors);
+            if(op == 3 || op == 4 || op == 7){    
+                cout << endl << "Num of processing units? Max: " << omp_get_num_procs() << endl;
+                cin >> numProcessors;
+                numProcessors = min(numProcessors, omp_get_num_procs());
+                omp_set_num_threads(numProcessors);
+            }
             
-            if(op == 5){                
+            if(op == 5 || op == 8){                
                 int i = 0;
 
-                std::cout << "Default Device: "
+                std::cout << endl << "Default Device: "
                         << sycl::device(sycl::default_selector()).get_info<sycl::info::device::name>()
                         << std::endl;
-                cout << "Available Devices: " << endl;
+                cout << endl << "Available Devices: " << endl;
                 for (auto device : sycl::device::get_devices(sycl::info::device_type::all)) {
                     std::cout << i <<": Device: "
                         << device.get_info<sycl::info::device::name>()
@@ -237,7 +243,7 @@ int main(int argc, char **argv){
                 cin >> syclDevice;
 
                 choosenDevice = sycl::device::get_devices(sycl::info::device_type::all)[syclDevice];
-                
+                cout << endl;
                 /*
                 sycl::device d;
                 try {
@@ -269,14 +275,26 @@ int main(int argc, char **argv){
             case 5:
                 luBlockFactorizationParallelSYCL(a, size, blockSize, choosenDevice);
                 break;
+            case 6:
+                OnMultBlockSequential(size, blockSize);
+                break;
+            case 7:
+                OnMultBlockOpenMP(size, blockSize);
+                break;
+            case 8: 
+                OnMultBlockOpenSYCL(size, blockSize, choosenDevice);
+                break;
+            default:
+                break;
         }
 
         timer.stop();
 	
-    
-        cout << endl << "LU" << endl;
-        printMatrix(size, size, a);
-        cout << endl;
+        if(op != 6 && op != 7 && op != 8){
+            cout << endl << "LU" << endl;
+            printMatrix(size, size, a);
+            cout << endl;
+        }
 
         SYSTEMTIME Time2 = clock();
         sprintf(st, "Time: %3.8f seconds\n", (double)timer.getElapsed());

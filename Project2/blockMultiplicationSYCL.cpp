@@ -10,10 +10,6 @@
 #include "blockMultiplicationSYCL.hpp"
 
 using namespace cl::sycl;
-using std::chrono::high_resolution_clock;
-using std::chrono::duration_cast;
-using std::chrono::duration;
-using std::chrono::milliseconds;
 
 void printResultAndTimeSYCL(int size, double *phc){
     std::cout << "Result matrix: " << std::endl;
@@ -41,7 +37,6 @@ void OnMultBlockOpenSYCL(size_t size, size_t blockSize, device &device){
         }
     }
 
-    auto t1 = high_resolution_clock::now();
 
     {
         queue myQueue(device);
@@ -80,9 +75,7 @@ void OnMultBlockOpenSYCL(size_t size, size_t blockSize, device &device){
         myQueue.wait();
     }
 
-    auto t2 = high_resolution_clock::now();
-    auto s_int = duration_cast<milliseconds>(t2 - t1);
-    std::cout << s_int.count() << "ms\n";
+
 
     printResultAndTimeSYCL(size, phc);
 
