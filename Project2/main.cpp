@@ -253,14 +253,14 @@ int main(int argc, char **argv){
             if(op == 5 || op == 8){                
                 int i = 0;
 
-                std::cout << endl << "Default Device: "
+                cout << endl << "Default Device: "
                         << sycl::device(sycl::default_selector()).get_info<sycl::info::device::name>()
-                        << std::endl;
+                        << endl;
                 cout << endl << "Available Devices: " << endl;
                 for (auto device : sycl::device::get_devices(sycl::info::device_type::all)) {
-                    std::cout << i <<": Device: "
+                    cout << i <<": Device: "
                         << device.get_info<sycl::info::device::name>()
-                        << std::endl;
+                        << endl;
                         i++;
                 }
 
@@ -272,20 +272,29 @@ int main(int argc, char **argv){
 
 
                 auto maxBlockSize = choosenDevice.get_info<cl::sycl::info::device::max_work_group_size>();
-                auto blockSize1 = prevPowerOfTwo(std::sqrt(maxBlockSize));              
+                auto blockSize1 = prevPowerOfTwo(sqrt(maxBlockSize));              
                 //Make sure the block size is not larger than the mat size
-                blockSize1 = std::min(size, blockSize1);
+                blockSize1 = min(size, blockSize1);
                    
                 while(true){
-                    std::cout << "The Device Max Work Group Size is : " << maxBlockSize << std::endl;
-                    std::cout << "The max blockSize is : " << blockSize1 << std::endl;
-                    std::cout << "Choose a block size? ";
+                    cout << "The Device Max Work Group Size is : " << maxBlockSize << endl;
+                    cout << "The max blockSize is : " << blockSize1 << endl;
+                    cout << "The matrix size " << size << " must be divisible by the block size "<< endl;
+                    cout << "Choose a block size? ";
                     cin >> blockSize;
 
                     if(blockSize > blockSize1){
                         cout << endl << "Maximum block size exceeded !!!" << endl << endl;
                         continue;
                     }
+                    
+                    if(size % blockSize != 0){
+                        cout << endl << "The matrix size must be divisible by the block size !!!" << endl << endl;
+                        continue;
+                    }
+
+                    cout << endl;
+                    
                     break;
                 }
             }
