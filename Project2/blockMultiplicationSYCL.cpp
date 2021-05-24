@@ -21,7 +21,7 @@ void printResultAndTimeSYCL(int size, double *phc){
 
 void OnMultBlockOpenSYCL(size_t size, size_t blockSize, device &device){
     size_t niterations = size * size / blockSize;
-    size_t i, j, block;
+    size_t i, j;
     double * pha, * phb, * phc;
 
     pha = (double*)malloc((size * size) * sizeof(double));
@@ -42,23 +42,62 @@ void OnMultBlockOpenSYCL(size_t size, size_t blockSize, device &device){
         std::cout << "Running on " << myQueue.get_device().get_info<sycl::info::device::name>() << "\n";
 
         // Wrap our data variable in a buffer
-        buffer<double, 1> phaBuf { pha, range<1> { size * size } };
-        buffer<double, 1> phbBuf { phb, range<1> { size * size } };
-        buffer<double, 1> phcBuf { phc, range<1> { size * size } };
+        const property_list props = {property::buffer::use_host_ptr()};
+        buffer<double, 1> phaBuf { pha, range<1> { size * size }, props };
+        buffer<double, 1> phcBuf { phc, range<1> { size * size }, props };
+        buffer<double, 1> phbBuf { phb, range<1> { size * size }, props };
 
         myQueue.submit([&](handler &cgh)
         {
-            size_t myBlock = block;
-            auto a = phaBuf.get_access<access::mode::read>(cgh);
-            auto b = phbBuf.get_access<access::mode::read>(cgh);
-            auto c = phcBuf.get_access<access::mode::read_write>(cgh);
+            auto access_a = phaBuf.get_access<access::mode::read>(cgh);
+            auto access_b = phbBuf.get_access<access::mode::read>(cgh);
+            auto access_c = phcBuf.get_access<access::mode::write>(cgh);
 
-            cgh.parallel_for<class block_mul>(range<3>{ niterations, blockSize, size }, [=](id<3> id)
+            accessor<double, 1, access::mode::read_write, access::target::local> localA(range<1>{blockSize * blockSize}, cgh);
+            accessor<double, 1, access::mode::read_write, access::target::local> localB(range<1>{blockSize * blockSize}, cgh);
+
+            cgh.parallel_for<class block_mul>(
+                nd_range<2> {
+                    range<2> { size, size },
+                    range<2> { blockSize, blockSize },
+                }, [=](nd_item<2> it)
             {
-                size_t l = (id[1] + id[0] * blockSize) / size;
-                size_t m = (id[1] + id[0] * blockSize) % size;
-                size_t k = id[2];
-                c[l * size + k] += a[l * size + m] * b[m * size + k];
+                // Current block
+                int blockX = it.get_group(1);
+                int blockY = it.get_group(0);
+
+                // Current local item
+                int localX = it.get_local_id(1);
+                int localY = it.get_local_id(0);
+
+                // Start in the A matrix
+                int a_start = size * blockSize * blockY;
+                // End in the b matrix
+                int a_end = a_start + size - 1;
+                // Start in the b matrix
+                int b_start = blockSize * blockX;
+
+                // Result for the current C(i,j) element
+                double tmp = 0;
+                // We go through all a, b blocks
+                for (int a = a_start, b = b_start; a <= a_end; a += blockSize, b += (blockSize * size)) {
+                    // Copy the values in shared memory collectively
+                    localA[localY * blockSize + localX] = access_a[a + size * localY + localX];
+                    // Note the swap of X/Y to maintain contiguous access
+                    localB[localX * blockSize + localY] = access_b[b + size * localY + localX];
+
+                    it.barrier(access::fence_space::local_space);
+                    // Now each thread adds the value of its sum
+                    for (int k = 0; k < blockSize; k++) {
+                        tmp += localA[localY * blockSize + k] * localB[localX * blockSize + k];
+                    }
+                    // The barrier ensures that all threads have written to local
+                    // memory before continuing
+                    it.barrier(access::fence_space::local_space);
+                }
+                auto elemIndex = it.get_global_id(0) * it.get_global_range()[1] + it.get_global_id(1);
+                // Each thread updates its position
+                access_c[elemIndex] = tmp;
             });
         });
 
