@@ -10,6 +10,7 @@
 
 using namespace cl::sycl;
 
+
 void printResultAndTimeSYCL(int size, double *phc){
     std::cout << "Result matrix: " << std::endl;
     for(size_t i=0; i<1; i++)
@@ -35,6 +36,7 @@ void OnMultBlockOpenSYCL(size_t size, size_t blockSize, device &device){
             phc[i * size + j] = 0;
         }
     }
+
 
 
     {

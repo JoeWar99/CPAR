@@ -22,6 +22,24 @@ using namespace std;
 
 #define SYSTEMTIME clock_t
 
+/* Obtains the previous power of two from the given integer.
+ * It works by masking out all ones after the first one bit,
+ * then leaves the first one bit intact, effectively
+ * yielding the first power of two < x. */
+inline int prevPowerOfTwo(int x) {
+    if (x < 0) {
+    return 0;
+    }
+    --x;
+    x |= x >> 1;
+    x |= x >> 2;
+    x |= x >> 4;
+    x |= x >> 8;
+    x |= x >> 16;
+    return x - (x >> 1);
+}
+
+
 void printMatrix(int Nx, int Ny, float *a){
     cout << "Matrix: " << endl;
     for (int i = 0; i < min(Nx, 10); i++)
@@ -215,8 +233,10 @@ int main(int argc, char **argv){
 
        if (op != 1)
         {
-            cout << endl << "Block Size?" << endl;
-            cin >> blockSize;
+            if(op != 8  && op != 5){
+                cout << endl << "Block Size? ";
+                cin >> blockSize;
+            }
                 
             if(op == 3 || op == 4 || op == 7){    
                 cout << endl << "Num of processing units? Max: " << omp_get_num_procs() << endl;
@@ -244,15 +264,25 @@ int main(int argc, char **argv){
 
                 choosenDevice = sycl::device::get_devices(sycl::info::device_type::all)[syclDevice];
                 cout << endl;
-                /*
-                sycl::device d;
-                try {
-                    d = sycl::device(sycl::gpu_selector());
-                } catch (exception const &e) {
-                    fprintf(stdout, "Cannot select a GPU\n%s\nSwitching to CPU\n", e.what());
-                    d = sycl::device(sycl::cpu_selector());
-                }  
-                */  
+
+
+                auto maxBlockSize = choosenDevice.get_info<cl::sycl::info::device::max_work_group_size>();
+                auto blockSize1 = prevPowerOfTwo(std::sqrt(maxBlockSize));              
+                //Make sure the block size is not larger than the mat size
+                blockSize1 = std::min(size, blockSize1);
+                   
+                while(true){
+                    std::cout << "The Device Max Work Group Size is : " << maxBlockSize << std::endl;
+                    std::cout << "The max blockSize is : " << blockSize1 << std::endl;
+                    std::cout << "Choose a block size? ";
+                    cin >> blockSize;
+
+                    if(blockSize > blockSize1){
+                        cout << endl << "Maximum block size exceeded !!!" << endl << endl;
+                        continue;
+                    }
+                    break;
+                }
             }
         }
         
