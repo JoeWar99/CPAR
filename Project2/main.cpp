@@ -213,6 +213,11 @@ int main(int argc, char **argv){
             break;
         }
 
+        if(op < 0 || op > 8){
+            cout << "Choose another option !!!" << endl; 
+            continue;
+        }
+
        
         printf("Matrix Size ? ");
         cin >> size;
